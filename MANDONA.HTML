@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertisseur JPG en PDF Gratuit</title>
+    <!-- Bibliothèque sécurisée pour générer le PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 30px;
+        }
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .options {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover { background: var(--primary-hover); }
+        .posts-section {
+            margin-top: 40px;
+        }
+        .post {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Convertisseur JPG en PDF</h1>
+        <p>Convertissez vos images instantanément et gratuitement</p>
+    </header>
+
+    <div class="card">
+        <div class="drop-zone" id="dropZone">
+            <p>Glissez-déposez vos images JPG ici ou <strong>cliquez pour choisir</strong></p>
+            <input type="file" id="fileInput" multiple accept="image/jpeg, image/png" style="display: none;">
+            <div id="fileCount" style="margin-top: 10px; font-weight: bold; color: var(--primary);"></div>
+        </div>
+
+        <!-- Options secondaires -->
+        <div class="options">
+            <div>
+                <label for="orientation">Orientation du PDF</label>
+                <select id="orientation">
+                    <option value="p">Portrait (Vertical)</option>
+                    <option value="l">Paysage (Horizontal)</option>
+                </select>
+            </div>
+            <div>
+                <label for="margin">Marges de la page</label>
+                <select id="margin">
+                    <option value="0">Sans marge (Plein écran)</option>
+                    <option value="10">Petites marges (10mm)</option>
+                    <option value="20">Grandes marges (20mm)</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="convertBtn">Convertir en PDF</button>
+    </div>
+
+    <!-- Section Publications visibles sur le site -->
+    <div class="posts-section">
+        <h2>Dernières Publications & Astuces</h2>
+        <div id="postsContainer">
+            <div class="post">
+                <h3>Comment optimiser vos images avant la conversion ?</h3>
+                <p>Pour obtenir un catalogue ou un fichier PDF très léger, pensez à exporter vos photos avec une résolution adaptée au web avant de les fusionner.</p>
+            </div>
+            <div class="post">
+                <h3>Nouveauté : Conversion de plusieurs photos à la fois</h3>
+                <p>Vous pouvez désormais sélectionner et importer une série complète d'images en une seule fois pour créer votre album ou votre document PDF.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { jsPDF } = window.jspdf;
+    let selectedFiles = [];
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileCount = document.getElementById('fileCount');
+    const convertBtn = document.getElementById('convertBtn');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', (e) => {
+        selectedFiles = Array.from(e.target.files);
+        fileCount.innerText = `${selectedFiles.length} fichier(s) sélectionné(s)`;
+    });
+
+    convertBtn.addEventListener('click', async () => {
+        if (selectedFiles.length === 0) {
+            alert('Veuillez d\'abord ajouter des images !');
+            return;
+        }
+
+        const orientation = document.getElementById('orientation').value;
+        const margin = parseInt(document.getElementById('margin').value);
+        
+        const pdf = new jsPDF({
+            orientation: orientation,
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            if (i > 0) pdf.addPage();
+            
+            const base64 = await readFileAsBase64(selectedFiles[i]);
+            
+            const width = orientation === 'p' ? 210 : 297;
+            const height = orientation === 'p' ? 297 : 210;
+            
+            pdf.addImage(base64, 'JPEG', margin, margin, width - (margin * 2), height - (margin * 2));
+        }
+
+        pdf.save('images-converties.pdf');
+    });
+
+    function readFileAsBase64(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+</script>
+</body>
+</html>
